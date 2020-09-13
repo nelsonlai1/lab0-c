@@ -1,11 +1,11 @@
+#include "queue.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include "harness.h"
-#include "queue.h"
-#ifndef strlcpy
-#define strlcpy(dst, src, sz) snprintf((dst), (sz), "%s", (src))
-#endif
+#include "harness.h"
+//#ifndef strlcpy
+//#define strlcpy(dst, src, sz) snprintf((dst), (sz), "%s", (src))
+//#endif
 /*
  * Create empty queue.
  * Return NULL if could not allocate space.
@@ -31,6 +31,7 @@ void q_free(queue_t *q)
     while (q->head != NULL) {
         list_ele_t *tmp = q->head;
         q->head = q->head->next;
+        free(tmp->value);
         free(tmp);
     }
     free(q);
@@ -48,18 +49,16 @@ bool q_insert_head(queue_t *q, char *s)
     if (q == NULL)
         return false;
     list_ele_t *newh;
-    /* TODO: What should you do if the q is NULL? */
     newh = malloc(sizeof(list_ele_t));
     if (newh == NULL)
         return false;
-    /* Don't forget to allocate space for the string and copy it */
-    /* What if either call to malloc returns NULL? */
     newh->value = malloc(sizeof(char) * (strlen(s) + 1));
     if (newh->value == NULL) {
         free(newh);
         return false;
     }
-    strlcpy(newh->value, s, strlen(s) + 1);
+    // strlcpy(newh->value, s, strlen(s) + 1);
+    snprintf(newh->value, strlen(s) + 1, "%s", s);
     if (q->head != NULL)
         newh->next = q->head;
     else {
@@ -91,13 +90,14 @@ bool q_insert_tail(queue_t *q, char *s)
         free(newt);
         return false;
     }
-    strlcpy(newt->value, s, strlen(s) + 1);
+    // strlcpy(newt->value, s, strlen(s) + 1);
+    snprintf(newt->value, strlen(s) + 1, "%s", s);
+    newt->next = NULL;
     if (q->tail != NULL)
         q->tail->next = newt;
     else
         q->head = newt;
     q->tail = newt;
-    newt->next = NULL;
     q->size++;
     return true;
 }
@@ -111,18 +111,16 @@ bool q_insert_tail(queue_t *q, char *s)
  */
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
-    /* TODO: You need to fix up this code. */
-    /* TODO: Remove the above comment when you are about to implement. */
-    if (q == NULL || q->head == NULL || sp == NULL)
+    if (q == NULL || q->head == NULL)
         return false;
-    memset(sp, '\0', bufsize);
-    if (bufsize > strlen(q->head->value))
-        strlcpy(sp, q->head->value, strlen(q->head->value) + 1);
-    else
-        strlcpy(sp, q->head->value, bufsize);
+    // if (bufsize > strlen(q->head->value))
+    //    strlcpy(sp, q->head->value, strlen(q->head->value) + 1);
+    // else
+    //    strlcpy(sp, q->head->value, bufsize);
+    if (sp != NULL)
+        snprintf(sp, bufsize, "%s", q->head->value);
     list_ele_t *rm = q->head;
     q->head = q->head->next;
-    rm->next = NULL;
     free(rm->value);
     free(rm);
     q->size--;
@@ -137,7 +135,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
  */
 int q_size(queue_t *q)
 {
-    if (q == NULL)
+    if (q == NULL || q->head == NULL)
         return 0;
     return q->size;
 }
@@ -153,19 +151,17 @@ void q_reverse(queue_t *q)
 {
     /* TODO: You need to write the code for this function */
     /* TODO: Remove the above comment when you are about to implement. */
-    if (q == NULL || q->head == NULL)
+    if (q == NULL || q->head == q->tail)
         return;
     list_ele_t *cursor = NULL;
     q->tail = q->head;
-    while (q->head != NULL && q->head->next != NULL) {
+    while (q->head != NULL) {
         list_ele_t *next = q->head->next;
-        if (cursor == NULL)
-            q->head->next = NULL;
-        else
-            q->head->next = cursor;
+        q->head->next = cursor;
         cursor = q->head;
         q->head = next;
     }
+    q->head = cursor;
 }
 
 /*
